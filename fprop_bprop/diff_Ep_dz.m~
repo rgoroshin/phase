@@ -1,0 +1,20 @@
+function [ dEp_dz ] = diff_Ep_dz(P,M1,z,bsz)
+%computes gradient of linear prediction of first moment of phase w.r.t. activations 
+
+diff_phase_dz = @(P,zi)(P*diag((P*zi + eps*ones(size(zi))).^-2)).*(diag(P*zi) - diag(zi)*P); 
+dphase_dz = zeros(size(z,1),size(z,1),3*bsz); 
+dphase_dz(:,:,1:bsz) = diff_phase_dz(P,z(:,1:bsz)); 
+dphase_dz(:,:,bsz+1:2*bsz) = diff_phase_dz(P,z(:,bsz+1:2*bsz)); 
+dphase_dz(:,:,2*bsz+1:3*bsz) = diff_phase_dz(P,z(:,2*bsz+1:3*bsz)); 
+
+dEp/dz 
+dEp_dz = zeros(size(z)); 
+moments = M1*(z./(P*z + eps*ones(size(z))));
+moments_err = (moments(:,2*bsz+1:3*bsz) - 2*moments(:,bsz+1:2*bsz) + moments(:,1:bsz))'; 
+
+dEp_dz(:,1:bsz) = moments_err*M1*dphase_dz(:,:,1:bsz); 
+dEp_dz(:,bsz+1:2*bsz) = -2*moments_err*M1*dphase_dz(:,:,bsz+1:2*bsz); 
+dEp_dz(:,2*bsz+1:3*bsz) = moments_err*M1*dphase_dz(:,:,2*bsz+1:3*bsz); 
+
+end
+
