@@ -1,20 +1,32 @@
 function [ dEp_dz ] = diff_Ep_dz(P,M1,z,bsz)
 %computes gradient of linear prediction of first moment of phase w.r.t. activations 
 
-diff_phase_dz = @(P,zi)(P*diag((P*zi + eps*ones(size(zi))).^-2)).*(diag(P*zi) - diag(zi)*P); 
-dphase_dz = zeros(size(z,1),size(z,1),3*bsz); 
-dphase_dz(:,:,1:bsz) = diff_phase_dz(P,z(:,1:bsz)); 
-dphase_dz(:,:,bsz+1:2*bsz) = diff_phase_dz(P,z(:,bsz+1:2*bsz)); 
-dphase_dz(:,:,2*bsz+1:3*bsz) = diff_phase_dz(P,z(:,2*bsz+1:3*bsz)); 
+diff_phase_dz = @(P,zi,Pzi)(P*diag((Pzi + eps*ones(size(zi))).^-2)).*(diag(Pzi) - diag(zi)*P); 
+dphase_dz = zeros(size(z,1)*bsz,size(z,1)*bsz,3); 
 
-dEp/dz 
-dEp_dz = zeros(size(z)); 
-moments = M1*(z./(P*z + eps*ones(size(z))));
-moments_err = (moments(:,2*bsz+1:3*bsz) - 2*moments(:,bsz+1:2*bsz) + moments(:,1:bsz))'; 
+%batch version of P
+Pb = P; 
+for i = 1:bsz-1
+    Pb = blkdiag(Pb,P);
+end
 
-dEp_dz(:,1:bsz) = moments_err*M1*dphase_dz(:,:,1:bsz); 
-dEp_dz(:,bsz+1:2*bsz) = -2*moments_err*M1*dphase_dz(:,:,bsz+1:2*bsz); 
-dEp_dz(:,2*bsz+1:3*bsz) = moments_err*M1*dphase_dz(:,:,2*bsz+1:3*bsz); 
+Pbz = ze
+for i = 1:3 
+ zi = z(:,1+(i-1)*bsz:i*bsz);
+ zi = zi(:); 
+ Pbzi = Pb*zi;
+ dphase_dz(:,:,i) = diff_phase_dz(Pb,zi,Pbzi); 
+end
+
+dEp_dz = dphase_dz; 
+%dEp/dz 
+% dEp_dz = zeros(size(z)); 
+% moments = M1*(z./(P*z + eps*ones(size(z))));
+% moments_err = (moments(:,3) - 2*moments(:,2) + moments(:,1))'; 
+% 
+% dEp_dz(:,1) = moments_err*M1*dphase_dz(:,:,1); 
+% dEp_dz(:,2) = -2*moments_err*M1*dphase_dz(:,:,2); 
+% dEp_dz(:,3) = moments_err*M1*dphase_dz(:,:,3); 
 
 end
 
