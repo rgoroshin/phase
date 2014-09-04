@@ -1,0 +1,9 @@
+function [sample] = get_batch(X,idx,sample)
+
+sample(:,1) = reshape(X(:,idx),[size(batch,1) 1]); 
+sample(:,2) = reshape(X(:,idx+1),size(batch,1)); 
+sample(:,3) = reshape(X(:,idx+2),size(batch,1)); 
+
+
+end
+
