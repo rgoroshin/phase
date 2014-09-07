@@ -1,0 +1,6 @@
+function [dEr_dz] = diff_Er_dz(x,W,z)
+
+
+
+end
+
