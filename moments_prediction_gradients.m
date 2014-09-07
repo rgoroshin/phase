@@ -1,9 +1,10 @@
-%% Checks the gradients of the various terms in the loss using central difference 
+% Checks the gradients of the various terms in the loss using central difference 
 clc; 
 clearvars -except 'X'; 
 close all; 
+addpath ./fprop_bprop/
 
-%% Constants 
+% Constants 
 %dimensions 
 insz = 16*16; %patch size
 codesz = 16; %code size 
@@ -18,7 +19,7 @@ dx = 1e-6; %step size for numerical check
 wl1 = 0.5; 
 ws = 0.5; 
 wp = 0.5; 
-%% Generate toy dataset 
+% Generate toy dataset 
 if ~exist('X')  %#ok<EXIST>
     disp('generating dataset...'); 
     options = struct('ntemplates',2); 
@@ -85,7 +86,7 @@ Er = @(x,W,z) 0.5*sum((sum((x - W*z).^2,1)));
 %Loss 
 L = Er(x,W,z) + wp*Ep(M1*(z./(P*z + eps*ones(size(z)))),bsz) + ws*Es((P*z + eps*ones(size(z))),bsz) + wl1*El1(z);
 
-%% Define/check gradients 
+% Define/check gradients 
 
 %dEr/dz
 dErdz = @(x,W,z) -W'*(x - W*z); 
@@ -167,7 +168,7 @@ if numerical_check == true
 
 end 
 
-%% Training 
+% Training 
 
 
 
