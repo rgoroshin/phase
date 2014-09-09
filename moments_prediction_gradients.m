@@ -59,28 +59,32 @@ for ii = 1:outsz
 end
 P = P1'*P1; 
 
+%first moment matrix (define coordinates from -1 to +1)  
+r = zeros(1,codesz); 
+r(1:poolsz) = linspace(-1,1,poolsz); 
+M1 = zeros(outsz,codesz);
+for ii = 1:outsz
+    M1(ii,:) = r; 
+    r = circshift(r,[1 poolsz]); 
+end
+
 %mini-batches
 Pb = P;  
 P1b = P1; 
+M1b = M1; 
 for i = 1:bsz-1
     Pb = blkdiag(Pb,P);
     P1b = blkdiag(P1b,P1);
+    M1b = blkdiag(M1b,M1);
 end
 P = Pb; 
 P1 = P1b; 
+M1 = M1b; 
 
 %check that: z = ((P'*m).*s)
 % assert(norm(z-(P*z + eps*ones(size(z))).*(z./(P*z + eps*ones(size(z))))) < 1e-10); 
 
-%first moment matrix (define coordinates from -1 to +1)  
-% r = zeros(1,codesz); 
-% r(1:poolsz) = linspace(-1,1,poolsz); 
-% M1 = zeros(outsz,codesz);
-% for ii = 1:outsz
-%     M1(ii,:) = r; 
-%     r = circshift(r,[1 poolsz]); 
-% end
-% 
+
 
 %L2-slowness-error 
 % Es = @(mag,bsz) 0.5*sum(sum((mag(:,bsz+1:2*bsz)-mag(:,1:bsz)).^2+(mag(:,2*bsz+1:3*bsz)-mag(:,bsz+1:2*bsz)).^2)); 
@@ -93,7 +97,6 @@ P1 = P1b;
 % 
 % %Loss 
 % L = Er(x(:,:,1),W,z(:,:,1)); %+ wp*Ep(M1*(z./(P*z + eps*ones(size(z)))),bsz) + ws*Es((P*z + eps*ones(size(z))),bsz) + wl1*sum(abs(z(:)));
-L = Es(z,P1); 
 % 
 % % Define/check gradients 
 % 
@@ -101,43 +104,19 @@ L = Es(z,P1);
 dEr_dz = diff_Er_dz(x,W,z); 
 % 
 %dEr/dW
-<<<<<<< HEAD
-dErdW = @(x,W,z) (x - W*z)*(-z'); 
-
-%dEs/dz = (dEs/dmag)(dmag/dz)
-dEs_dz = zeros(size(z));    
-dEs_dz = diff_Es_dz(P,z,bsz,dEs_dz);
-
-% % %dEp/dz 
-% dEp_dz = diff_Ep_dz(P,M1,z,bsz); 
-diff_phase_dz = @(P,zi)(P*diag((P*zi + eps*ones(size(zi))).^-2)).*(diag(P*zi) - diag(zi)*P); 
-
-if numerical_check == true 
-    
-    disp('checking gradients via central difference...') 
-
-=======
 dEr_dW = diff_Er_dW(x,W,z); 
 %dEs/dz 
 dEs_dz = diff_Es_dz(z,P); 
 %dphase/dz
 dphase_dz = diff_phase_dz(z,P);
-% 
-% %dEs/dz = (dEs/dmag)(dmag/dz)
-% dEs_dz = zeros(size(z));    
-% dEs_dz = diff_Es_dz(P,z,bsz,dEs_dz);
-% 
-% % % %dEp/dz 
-% % dEp_dz = diff_Ep_dz(P,M1,z,bsz); 
-% % zi = reshape(numel(z(:,1:bsz);
-% % Pzi = reshape((P*zi + eps*ones(size(zi))).^-2,[numel(zi),1]);
-% % f = (P*diag(Pzi.^-2).*(diag(Pzi) - diag(reshape(zi,[numel(zi),1])*P); 
-% 
-% if numerical_check == true 
-%     
-%     disp('checking gradients via central difference...') 
-% 
->>>>>>> 912c4dc1dcd06f4c3e239253634fad1953c45450
+%dEp/dz 
+[pred_loss, moments_error] = Ep(z,P,M1);
+dEp_dz = diff_Ep_dz(dphase_dz,moments_error',M1,size(z)); 
+
+if numerical_check == true 
+    
+    disp('checking gradients via central difference...') 
+
     %numerical check 1
     dEr_dz_num = zeros(size(z)); 
     for n = 1:3 
@@ -191,8 +170,8 @@ dphase_dz = diff_phase_dz(z,P);
     for n = 1:3
         zi = z(:,:,n); 
         zi = zi(:); 
-        for ii = 1:128
-            for jj = 1:128
+        for ii = 1:numel(z(:,:,1))
+            for jj = 1:numel(z(:,:,1))
                 zr = zi; 
                 zl = zi;
                 zr(ii) = zr(ii) + dx; 
@@ -205,29 +184,30 @@ dphase_dz = diff_phase_dz(z,P);
     end
 
     err = dphase_dz - dphase_dz_num; 
-    assert(sum(abs(err(:)))/sum(abs(dphase_dz(:))) < 1e-5); %more unstable deravative
+    assert(sum(abs(err(:)))/sum(abs(dphase_dz(:))) < 5e-5); %unstable deravative for innactive groups 
 
-% % % 
-% % 
-%     % numerical check 4 
-% %     dEp_dz_num = zeros(size(z)); 
-% %     for ii = 1:size(z,1)
-% %         for jj = 1:size(z,2) 
-% %             zr = z; 
-% %             zl = z;
-% %             zr(ii,jj) = zr(ii,jj) + dx; 
-% %             zl(ii,jj) = zl(ii,jj) - dx; 
-% %             dEp_dz_num(ii,jj) = (Ep(M1*(zr./(P*zr + eps*ones(size(zr))))) - Ep(M1*(zl./(P*zl + eps*ones(size(zl))))))/(2*dx); 
-% %         end 
-% %     end
-% %     
-% %     unstable when group is off, so relax the accuracy (?) 
-% %     assert(norm(dEp_dz - dEp_dz_num, 1)/norm(dEp_dz_num,1) < 1e-3); 
-% 
-%     disp('passed!')
-% 
-% end 
-% 
+    %numerical check 5
+        dEp_dz_num = zeros(size(z));
+        for n = 1:3
+            for ii = 1:size(z,1)
+                for jj = 1:size(z,2)
+                    zr = z; 
+                    zl = z;
+                    zr(ii,jj,n) = zr(ii,jj,n) + dx; 
+                    zl(ii,jj,n) = zl(ii,jj,n) - dx;
+                    dEp_dz_num(ii,jj,n) = (Ep(zr,P,M1) - Ep(zl,P,M1))/(2*dx); 
+                end 
+            end
+        end
+    
+    err = dEp_dz - dEp_dz_num;
+    assert(sum(abs(err(:)))/sum(abs(dEp_dz(:))) < 5e-5)
+    
+    
+    disp('passed!')
+
+end 
+
 % % Training 
 
 
