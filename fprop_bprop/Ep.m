@@ -9,7 +9,7 @@ function [pred_error,moments_error] = Ep(z,P,M1)
     end
 
     moments = M1*ph; 
-    moments_error = moments(:,3) - 2*moments(:,2) + moments(:,1);  
+    moments_error = (moments(:,3) - 2*moments(:,2) + moments(:,1))';  
     pred_error = 0.5*sum(moments_error.^2);
 
 end
