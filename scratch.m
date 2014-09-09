@@ -22,7 +22,7 @@ clc;
 % err = dphase_dz - dphase_dz2;
 % err = norm(err(:)); 
 
-dphase_dz = diff_Ep_dz(P,zeros(1),z,bsz);
+dphase_dz = diff_Ep_dz(P,zeros(1),z);
 
 p = @(z,P) z./(P*z + eps*ones(size(z))); 
 

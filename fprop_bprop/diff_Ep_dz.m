@@ -1,13 +1,14 @@
-function [ dEp_dz ] = diff_Ep_dz(P,M1,z,bsz)
+function [ dEp_dz ] = diff_Ep_dz(P,M1,z)
 %computes gradient of linear prediction of first moment of phase w.r.t. activations 
 
 diff_phase_dz = @(P,zi,Pzi)(P*diag((Pzi + eps*ones(size(zi))).^-2)).*(diag(Pzi) - diag(zi)*P); 
-dphase_dz = zeros(size(z,1)*bsz,size(z,1)*bsz,3); 
+dphase_dz = zeros(numel(z(:,:,1)),numel(z(:,:,1)),3); 
 % Pbz = zeros(size(z,1)*bsz,3); 
 
 
 for i = 1:3 
- zi = z(:,1+(i-1)*bsz:i*bsz);
+%  zi = z(:,1+(i-1)*bsz:i*bsz);
+ zi = z(:,:,i); 
  zi = zi(:); 
  Pzi = P*zi;
 %  Pz(:,i) = Pzi; 
