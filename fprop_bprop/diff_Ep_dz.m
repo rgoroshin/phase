@@ -3,20 +3,15 @@ function [ dEp_dz ] = diff_Ep_dz(P,M1,z,bsz)
 
 diff_phase_dz = @(P,zi,Pzi)(P*diag((Pzi + eps*ones(size(zi))).^-2)).*(diag(Pzi) - diag(zi)*P); 
 dphase_dz = zeros(size(z,1)*bsz,size(z,1)*bsz,3); 
-Pbz = zeros(size(z,1)*bsz,3); 
+% Pbz = zeros(size(z,1)*bsz,3); 
 
-%batch version of P
-Pb = P; 
-for i = 1:bsz-1
-    Pb = blkdiag(Pb,P);
-end
 
 for i = 1:3 
  zi = z(:,1+(i-1)*bsz:i*bsz);
  zi = zi(:); 
- Pbzi = Pb*zi;
- Pbz(:,i) = Pbzi; 
- dphase_dz(:,:,i) = diff_phase_dz(Pb,zi,Pbzi); 
+ Pzi = P*zi;
+%  Pz(:,i) = Pzi; 
+ dphase_dz(:,:,i) = diff_phase_dz(P,zi,Pzi); 
 end
 
 dEp_dz = dphase_dz; 

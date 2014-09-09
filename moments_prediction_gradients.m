@@ -52,19 +52,22 @@ W = normalize_cols(W,insz);
 %pooling matrix 
 r = zeros(1,codesz); 
 r(1,1:poolsz) = 1; 
-P = zeros(outsz,codesz); 
+P1 = zeros(outsz,codesz); 
 for ii = 1:outsz
-    P(ii,:) = r; 
+    P1(ii,:) = r; 
     r = circshift(r,[1 poolsz]); 
 end
-P = P'*P; 
+P = P1'*P1; 
 
 %mini-batches
-Pb = P; 
+Pb = P;  
+P1b = P1; 
 for i = 1:bsz-1
     Pb = blkdiag(Pb,P);
+    P1b = blkdiag(P1b,P1);
 end
 P = Pb; 
+P1 = P1b; 
 
 %check that: z = ((P'*m).*s)
 % assert(norm(z-(P*z + eps*ones(size(z))).*(z./(P*z + eps*ones(size(z))))) < 1e-10); 
@@ -80,7 +83,7 @@ P = Pb;
 % 
 
 %L2-slowness-error 
-Es = @(mag,bsz) 0.5*sum(sum((mag(:,bsz+1:2*bsz)-mag(:,1:bsz)).^2+(mag(:,2*bsz+1:3*bsz)-mag(:,bsz+1:2*bsz)).^2)); 
+% Es = @(mag,bsz) 0.5*sum(sum((mag(:,bsz+1:2*bsz)-mag(:,1:bsz)).^2+(mag(:,2*bsz+1:3*bsz)-mag(:,bsz+1:2*bsz)).^2)); 
 % 
 % %L2-Prediction-error 
 % Ep = @(moments,bsz) 0.5*sum(sum((moments(:,2*bsz+1:3*bsz) - 2*moments(:,bsz+1:2*bsz) + moments(:,1:bsz)).^2));  
@@ -89,7 +92,8 @@ Es = @(mag,bsz) 0.5*sum(sum((mag(:,bsz+1:2*bsz)-mag(:,1:bsz)).^2+(mag(:,2*bsz+1:
 % Er = @(x,W,z) 0.5*sum((sum((x - W*z).^2,1))); 
 % 
 % %Loss 
-L = Er(x(:,:,1),W,z(:,:,1)); %+ wp*Ep(M1*(z./(P*z + eps*ones(size(z)))),bsz) + ws*Es((P*z + eps*ones(size(z))),bsz) + wl1*sum(abs(z(:)));
+% L = Er(x(:,:,1),W,z(:,:,1)); %+ wp*Ep(M1*(z./(P*z + eps*ones(size(z)))),bsz) + ws*Es((P*z + eps*ones(size(z))),bsz) + wl1*sum(abs(z(:)));
+L = Es(z,P1); 
 % 
 % % Define/check gradients 
 % 

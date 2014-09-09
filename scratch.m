@@ -1,12 +1,12 @@
 clc; 
 %pooling matrix 
 % 
-Pb = P; 
-M1b = M1; 
-for i = 1:bsz-1
-    Pb = blkdiag(Pb,P);
-    M1b = blkdiag(M1b,M1);
-end
+% Pb = P; 
+% % M1b = M1; 
+% for i = 1:bsz-1
+%     Pb = blkdiag(Pb,P);
+% %     M1b = blkdiag(M1b,M1);
+% end
 % 
 % diff_phase_dz = @(P,zi)(P*diag((P*zi + eps*ones(size(zi))).^-2)).*(diag(P*zi) - diag(zi)*P); 
 % dphase_dz2 = zeros(codesz*bsz,codesz*bsz,3); 
@@ -46,8 +46,8 @@ zi = zi(:);
             zl = zi;
             zr(ii) = zr(ii) + dx; 
             zl(ii) = zl(ii) - dx;
-            pr = p(zr,Pb); 
-            pl = p(zl,Pb); 
+            pr = p(zr,P); 
+            pl = p(zl,P); 
             dphase_dz_num(jj,ii) = (pr(jj) - pl(jj))/(2*dx); 
         end 
     end
