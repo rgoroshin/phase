@@ -26,10 +26,8 @@ dphase_dz = diff_Ep_dz(P,zeros(1),z);
 
 p = @(z,P) z./(P*z + eps*ones(size(z))); 
 
-i = 2; 
 z = reshape(z,[16 8 3]); 
-zi = z(:,:,i); 
-zi = zi(:); 
+
 % 
 % zr = repmat(zi,[1 128]) + dx*ones(size(diag(zi))); 
 % zl = repmat(zi,[1 128]) - dx*ones(size(diag(zi))); 
@@ -39,20 +37,24 @@ zi = zi(:);
 
  
 % numerical check 1
-    dphase_dz_num = zeros(128,128); 
-    for ii = 1:128
-        for jj = 1:128
-            zr = zi; 
-            zl = zi;
-            zr(ii) = zr(ii) + dx; 
-            zl(ii) = zl(ii) - dx;
-            pr = p(zr,P); 
-            pl = p(zl,P); 
-            dphase_dz_num(jj,ii) = (pr(jj) - pl(jj))/(2*dx); 
-        end 
+    dphase_dz_num = zeros(128,128,3);
+    for n = 1:3
+        zi = z(:,:,n); 
+        zi = zi(:); 
+        for ii = 1:128
+            for jj = 1:128
+                zr = zi; 
+                zl = zi;
+                zr(ii) = zr(ii) + dx; 
+                zl(ii) = zl(ii) - dx;
+                pr = p(zr,P); 
+                pl = p(zl,P); 
+                dphase_dz_num(jj,ii,n) = (pr(jj) - pl(jj))/(2*dx); 
+            end 
+        end
     end
 
-err = dphase_dz_num - dphase_dz(:,:,i); 
+err = dphase_dz_num - dphase_dz; 
 err_val = norm(err(:));
 
 %dEp/dz 

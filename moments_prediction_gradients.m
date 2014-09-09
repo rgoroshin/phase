@@ -98,10 +98,14 @@ L = Es(z,P1);
 % % Define/check gradients 
 % 
 % %dEr/dz 
-dErdz = diff_Er_dz(x,W,z); 
+dEr_dz = diff_Er_dz(x,W,z); 
 % 
 %dEr/dW
-dErdW = diff_Er_dW(x,W,z); 
+dEr_dW = diff_Er_dW(x,W,z); 
+%dEs/dz 
+dEs_dz = diff_Es_dz(z,P); 
+%dphase/dz
+dphase_dz = diff_phase_dz(z,P);
 % 
 % %dEs/dz = (dEs/dmag)(dmag/dz)
 % dEs_dz = zeros(size(z));    
@@ -118,7 +122,7 @@ dErdW = diff_Er_dW(x,W,z);
 %     disp('checking gradients via central difference...') 
 % 
     %numerical check 1
-    dErdz_num = zeros(size(z)); 
+    dEr_dz_num = zeros(size(z)); 
     for n = 1:3 
         for ii = 1:size(z,1)
             for jj = 1:size(z,2) 
@@ -126,15 +130,15 @@ dErdW = diff_Er_dW(x,W,z);
                 zl = z(:,:,n);
                 zr(ii,jj) = zr(ii,jj) + dx; 
                 zl(ii,jj) = zl(ii,jj) - dx; 
-                dErdz_num(ii,jj,n) = (Er(x(:,:,n),W,zr) - Er(x(:,:,n),W,zl))/(2*dx); 
+                dEr_dz_num(ii,jj,n) = (Er(x(:,:,n),W,zr) - Er(x(:,:,n),W,zl))/(2*dx); 
             end 
         end
     end
-    err = dErdz - dErdz_num; 
-    assert(sum(abs(err(:)))/sum(abs(dErdz(:))) < 1e-6); 
+    err = dEr_dz - dEr_dz_num; 
+    assert(sum(abs(err(:)))/sum(abs(dEr_dz(:))) < 1e-6); 
 
     %numerical check 2
-    dErdW_num = zeros(size(W));  
+    dEr_dW_num = zeros(size(W));  
     for n = 1:3 
         for ii = 1:size(W,1) 
             for jj = 1:size(W,2) 
@@ -142,26 +146,50 @@ dErdW = diff_Er_dW(x,W,z);
                 Wl = W;
                 Wr(ii,jj) = Wr(ii,jj) + dx; 
                 Wl(ii,jj) = Wl(ii,jj) - dx; 
-                dErdW_num(ii,jj) = dErdW_num(ii,jj) + ((Er(x(:,:,n),Wr,z(:,:,n)) - Er(x(:,:,n),Wl,z(:,:,n)))/(2*dx)); 
+                dEr_dW_num(ii,jj) = dEr_dW_num(ii,jj) + ((Er(x(:,:,n),Wr,z(:,:,n)) - Er(x(:,:,n),Wl,z(:,:,n)))/(2*dx)); 
             end
         end
     end
-    err = dErdW - dErdW_num; 
-    assert(sum(abs(err(:)))/sum(abs(dErdW(:))) < 1e-6); 
-% 
-%  
-%     %numerical check 3
-%     dEsdz_num = zeros(size(z)); 
-%     for ii = 1:size(z,1)
-%         for jj = 1:size(z,2) 
-%             zr = z; 
-%             zl = z;
-%             zr(ii,jj) = zr(ii,jj) + dx; 
-%             zl(ii,jj) = zl(ii,jj) - dx; 
-%             dEsdz_num(ii,jj) = (Es((P*zr + eps*ones(size(zr))),bsz) - Es((P*zl + eps*ones(size(zl))),bsz))/(2*dx); 
-%         end 
-%     end
-%     assert(norm(dEs_dz - dEsdz_num, 1)/norm(dEsdz_num,1) < 1e-6); 
+    err = dEr_dW - dEr_dW_num; 
+    assert(sum(abs(err(:)))/sum(abs(dEr_dW(:))) < 1e-6); 
+ 
+    %numerical check 3
+    dEs_dz_num = zeros(size(z)); 
+    for n = 1:3 
+        for ii = 1:size(z,1)
+            for jj = 1:size(z,2) 
+                zr = z; 
+                zl = z;
+                zr(ii,jj,n) = zr(ii,jj,n) + dx; 
+                zl(ii,jj,n) = zl(ii,jj,n) - dx; 
+                dEs_dz_num(ii,jj,n) = (Es(zr,P1) - Es(zl,P1))/(2*dx); 
+            end 
+        end
+    end
+    err = dEs_dz - dEs_dz_num; 
+    assert(sum(abs(err(:)))/sum(abs(dEs_dz_num(:))) < 1e-6); 
+    
+    %numerical check 4
+    dphase_dz_num = zeros(numel(z(:,:,1)),numel(z(:,:,1)),3);
+    for n = 1:3
+        zi = z(:,:,n); 
+        zi = zi(:); 
+        for ii = 1:128
+            for jj = 1:128
+                zr = zi; 
+                zl = zi;
+                zr(ii) = zr(ii) + dx; 
+                zl(ii) = zl(ii) - dx;
+                pr = zr./(P*zr + eps*ones(size(zr))); 
+                pl = zl./(P*zl + eps*ones(size(zl)));
+                dphase_dz_num(jj,ii,n) = (pr(jj) - pl(jj))/(2*dx); 
+            end 
+        end
+    end
+
+    err = dphase_dz - dphase_dz_num; 
+    assert(sum(abs(err(:)))/sum(abs(dphase_dz(:))) < 1e-5); %more unstable deravative
+
 % % % 
 % % 
 %     % numerical check 4 
