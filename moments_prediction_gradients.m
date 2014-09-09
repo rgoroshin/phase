@@ -99,9 +99,7 @@ dEs_dz = diff_Es_dz(P,z,bsz,dEs_dz);
 
 % % %dEp/dz 
 % dEp_dz = diff_Ep_dz(P,M1,z,bsz); 
-% zi = reshape(numel(z(:,1:bsz);
-% Pzi = reshape((P*zi + eps*ones(size(zi))).^-2,[numel(zi),1]);
-% f = (P*diag(Pzi.^-2).*(diag(Pzi) - diag(reshape(zi,[numel(zi),1])*P); 
+diff_phase_dz = @(P,zi)(P*diag((P*zi + eps*ones(size(zi))).^-2)).*(diag(P*zi) - diag(zi)*P); 
 
 if numerical_check == true 
     
