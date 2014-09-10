@@ -6,11 +6,11 @@ function [] = check_gradients(x,z,W,P,P1,M1,dEr_dz,dEr_dW,dEs_dz,dEp_dz,dx)
         for n = 1:3 
             for ii = 1:size(z,1)
                 for jj = 1:size(z,2) 
-                    zr = z(:,:,n); 
-                    zl = z(:,:,n);
-                    zr(ii,jj) = zr(ii,jj) + dx; 
-                    zl(ii,jj) = zl(ii,jj) - dx; 
-                    dEr_dz_num(ii,jj,n) = (Er(x(:,:,n),W,zr) - Er(x(:,:,n),W,zl))/(2*dx); 
+                    zr = z; 
+                    zl = z;
+                    zr(ii,jj,n) = zr(ii,jj,n) + dx; 
+                    zl(ii,jj,n) = zl(ii,jj,n) - dx; 
+                    dEr_dz_num(ii,jj,n) = (Er(x,W,zr) - Er(x,W,zl))/(2*dx); 
                 end 
             end
         end
@@ -19,17 +19,15 @@ function [] = check_gradients(x,z,W,P,P1,M1,dEr_dz,dEr_dW,dEs_dz,dEp_dz,dx)
 
         %numerical check 2
         dEr_dW_num = zeros(size(W));  
-        for n = 1:3 
             for ii = 1:size(W,1) 
                 for jj = 1:size(W,2) 
                     Wr = W; 
                     Wl = W;
                     Wr(ii,jj) = Wr(ii,jj) + dx; 
                     Wl(ii,jj) = Wl(ii,jj) - dx; 
-                    dEr_dW_num(ii,jj) = dEr_dW_num(ii,jj) + ((Er(x(:,:,n),Wr,z(:,:,n)) - Er(x(:,:,n),Wl,z(:,:,n)))/(2*dx)); 
+                    dEr_dW_num(ii,jj) = dEr_dW_num(ii,jj) + ((Er(x,Wr,z) - Er(x,Wl,z))/(2*dx)); 
                 end
             end
-        end
         err = dEr_dW - dEr_dW_num; 
         assert(sum(abs(err(:)))/sum(abs(dEr_dW(:))) < 1e-6); 
 

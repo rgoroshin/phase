@@ -10,19 +10,20 @@ insz = 16*16; %patch size
 codesz = 16; %code size 
 poolsz = 4; %pool group size
 bsz = 8; %batch size 
+L = 10000; 
 outsz = codesz/poolsz; %output size 
 assert(rem(outsz,1)==0,'outsz is not an integer'); 
 numerically_check_gradients = true; 
 display_sample = true; 
 dx = 1e-6; %step size for numerical check
 %loss multipliers 
-wl1 = 0.5; 
+wL1 = 0.5; 
 ws = 0.5; 
 wp = 0.5; 
 % Generate toy dataset 
 if ~exist('X')  %#ok<EXIST>
     disp('generating dataset...'); 
-    options = struct('ntemplates',2); 
+    options = struct('ntemplates',2,'L',L); 
     X=generate_jitter_data2d(options);
     disp('done!'); 
 end
@@ -32,17 +33,17 @@ batch = get_batch(X,order(:,1),batch);
 if display_sample == true
    n = 1; 
    Ibatch = reshape(batch, [16 16 1 bsz 3]); 
-   imdisp(Ibatch(:,:,:,1,:),'Border',[0.1 0.1]); 
+   imdisp(Ibatch(:,:,:,2,:),'Border',[0.1 0.1]); 
 end
 % Loss Definition and Initialization 
 % ReLU 
-ReLU = @(x) x.*(x>0); 
+ReLU = @(x,lambda) (x-lambda).*((x-lambda)>0); 
 
 %data sample 
 x = batch; 
 
 %codes for three temporal samples 
-z = ReLU(rand(codesz,bsz,3) - 0.5); 
+z = ReLU(rand(codesz,bsz,3),0.5); 
 
 %normalized decoder dictionary 
 W = rand(insz,codesz) - 0.5;
@@ -72,7 +73,7 @@ end
 Pb = P;  
 P1b = P1; 
 M1b = M1; 
-for i = 1:bsz-1
+for k = 1:bsz-1
     Pb = blkdiag(Pb,P);
     P1b = blkdiag(P1b,P1);
     M1b = blkdiag(M1b,M1);
@@ -90,18 +91,54 @@ if numerically_check_gradients == true
     %dEs/dz 
     dEs_dz = diff_Es_dz(z,P); 
     %dEp/dz 
-    [pred_loss, moments_error] = Ep(z,P,M1);
-    dEp_dz = diff_Ep_dz(z,moments_error,P,M1); 
+    dEp_dz = diff_Ep_dz(z,P,M1); 
     
     disp('checking gradients via central difference...') 
-
     check_gradients(x,z,W,P,P1,M1,dEr_dz,dEr_dW,dEs_dz,dEp_dz,dx)
-    
     disp('passed!')
 
 end 
 
-% % Training 
+% Training 
+epochs = 1; 
+infer_steps = 20; 
+
+for iter = 1:epochs 
+    
+    waitbar(iter/epochs); 
+    
+    Loss = 0; 
+    
+    for n = 1:size(order,2)
+       
+         x = get_batch(X,order(:,n),batch); 
+         
+         RecCost = Er(x,W,z); 
+         L1Cost = sum(abs(z(:))); 
+         SlowCost = Es(z,P1);
+         [PredCost,moments_error] = Ep(z,P,M1);  
+         
+         Lb = RecCost + wL1*L1Cost + ws*SlowCost + wp*PredCost; 
+         Loss = Loss + Lb; 
+         
+         %inference 
+         z = zeros(codesz,bsz,3); 
+         
+         for ii = 1:infer_steps 
+            
+             dEr_dz = diff_Er_dz(x,W,z);
+             dEs_dz = diff_Es_dz(z,P);
+             dEp_dz = diff_Ep_dz(z,moments_error,P,M1);
+             
+             
+         end
+         
+        
+    end
+    
+    disp(['Loss = ' num2str(Loss)])
+    
+end
 
 
 

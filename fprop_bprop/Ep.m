@@ -1,4 +1,4 @@
-function [pred_error,moments_error] = Ep(z,P,M1)  
+function [pred_error] = Ep(z,P,M1)  
     
     ph = zeros(numel(z(:,:,1)),3); 
 
