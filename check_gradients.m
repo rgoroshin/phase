@@ -25,7 +25,7 @@ function [] = check_gradients(x,z,W,P,P1,M1,dEr_dz,dEr_dW,dEs_dz,dEp_dz,dx)
                     Wl = W;
                     Wr(ii,jj) = Wr(ii,jj) + dx; 
                     Wl(ii,jj) = Wl(ii,jj) - dx; 
-                    dEr_dW_num(ii,jj) = dEr_dW_num(ii,jj) + ((Er(x,Wr,z) - Er(x,Wl,z))/(2*dx)); 
+                    dEr_dW_num(ii,jj) = ((Er(x,Wr,z) - Er(x,Wl,z))/(2*dx)); 
                 end
             end
         err = dEr_dW - dEr_dW_num; 

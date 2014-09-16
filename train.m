@@ -7,18 +7,18 @@ addpath ./fprop_bprop/
 % Constants 
 %dimensions 
 insz = 16*16; %patch size
-codesz = 16;%2*insz; %code size 
+codesz = insz;%2*insz; %code size 
 poolsz = 4; %pool group size
 poolst = 4; %pool group stride 
 bsz = 8; %batch size 
 L = 100; 
 outsz = codesz/poolsz; %output size 
 assert(rem(outsz,1)==0,'outsz is not an integer'); 
-numerically_check_gradients = true; 
-display_sample = true; 
+numerically_check_gradients = false; 
+display_sample = false; 
 dx = 1e-6; %step size for numerical check
 %loss multipliers 
-wL1 = 0.0; 
+wL1 = 0.05; 
 ws = 0.0; 
 wp = 0.0; 
 % Generate toy dataset 
@@ -27,6 +27,7 @@ if ~exist('X')  %#ok<EXIST>
     options = struct('ntemplates',2,'L',L); 
     X=generate_jitter_data2d(options);
     X = X - repmat(mean(X,2),[1 size(X,2)]); 
+    X = X./repmat(sqrt(sum(X.^2,1)),[insz 1]); 
     disp('done!'); 
 end
 batch = zeros(insz,bsz,3);
@@ -103,9 +104,9 @@ end
 
 % Training 
 epochs = 100; 
-infer_steps = 20; 
-zstep = 0.01; 
-Wstep = 0.05; 
+infer_steps = 30; 
+zstep = 0.1; 
+Wstep = 0.1; 
 
 for iter = 1:epochs 
     
@@ -117,39 +118,39 @@ for iter = 1:epochs
        
          x = get_batch(X,order(:,n),x); 
          
-         RecCost = 2*Er(x,W,z)/(norm(x(:))^2); 
-%          L1Cost = sum(abs(z(:))); 
-%          SlowCost = Es(z,P1);
-%          PredCost = Ep(z,P,M1);  
-         
-         Loss_batch = RecCost; %+ wL1*L1Cost + ws*SlowCost + wp*PredCost; 
-         Loss = Loss + Loss_batch; 
          
          %inference (z-update) 
          z = zeros(codesz,bsz,3); 
          
          for ii = 1:infer_steps 
-            
-%              dEr_dz = diff_Er_dz(x,W,z);
-%              dEs_dz = diff_Es_dz(z,P);
-%              dEp_dz = diff_Ep_dz(z,P,M1);            
-             dz = diff_Er_dz(x,W,z);%+ ws*dEs_dz + wp*dEp_dz;  
-%              z = ReLU(z - zstep*dz, zstep*wL1); 
-             z = z - zstep*dz; 
+       
+             dz = diff_Er_dz(x,W,z);
+             z = ReLU(z - zstep*dz, zstep*wL1); 
+%              z = z - zstep*dz; 
              
          end
          
          %dictionary update 
          dW = diff_Er_dW(x,W,z);
          W = W - Wstep*dW; 
-         W = normalize_cols(W,insz); 
+         
+         if mod(iter,10) == 0 
+            W = normalize_cols(W,insz); 
+         end
+
+         RecCost = Er(x,W,z); 
+         L1Cost = sum(abs(z(:))); 
+
+         Loss_batch = RecCost; %+ wL1*L1Cost;  
+         Loss = Loss + Loss_batch; 
         
     end
     
     Iw = reshape(W,[sqrt(insz),sqrt(insz),1,codesz]); 
     figure(1); 
     imdisp(Iw,'Border',[0.1 0.1])
-    disp(['Loss = ' num2str(Loss/L)])
+    disp(['Loss= ' num2str(Loss/size(order,2))]); 
+    disp(['Sparsity= ' num2str(sum(z(:)>0)/numel(z))]); 
     
 end
 
