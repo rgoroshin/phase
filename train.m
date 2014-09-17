@@ -104,7 +104,7 @@ end
 
 % Training 
 epochs = 100; 
-infer_steps = 30; 
+infer_steps = 5; 
 zstep = 0.1; 
 Wstep = 0.1; 
 
@@ -123,10 +123,15 @@ for iter = 1:epochs
          z = zeros(codesz,bsz,3); 
          
          for ii = 1:infer_steps 
-       
-             dz = diff_Er_dz(x,W,z);
-             z = ReLU(z - zstep*dz, zstep*wL1); 
-%              z = z - zstep*dz; 
+             tic();
+             dEr_dz = diff_Er_dz(x,W,z);
+             toc();
+             dEs_dz = diff_Es_dz(z,P);
+             toc();
+             dEp_dz = diff_Ep_dz(z,P,M1);
+             toc();
+             dz = dEr_dz + ws*dEs_dz + wp*dEp_dz; 
+             z = ReLU(z - zstep*dz, zstep*wL1);  
              
          end
          
@@ -140,8 +145,9 @@ for iter = 1:epochs
 
          RecCost = Er(x,W,z); 
          L1Cost = sum(abs(z(:))); 
+         SlowCost = Es(z,P1); 
 
-         Loss_batch = RecCost; %+ wL1*L1Cost;  
+         Loss_batch = RecCost + wL1*L1Cost + ws*Es(z,P1) + wp*Ep(z,P,M1);  
          Loss = Loss + Loss_batch; 
         
     end
