@@ -1,17 +1,166 @@
+% 
+%     z1 = z(:,:,1); z1 = z1(:); 
+%     z2 = z(:,:,2); z2 = z2(:); 
+%     z3 = z(:,:,3); z3 = z3(:); 
+%     
+%     m1 = P*z1 + eps*ones(size(z1));
+%     m2 = P*z2 + eps*ones(size(z1));
+%     m3 = P*z3 + eps*ones(size(z1));
+%     
+%     p1 = z1./m1; 
+%     p2 = z2./m2; 
+%     p3 = z3./m3; 
+%     
+%     mom1 = reshape(repmat(M1*p1,[1 poolsz])',[size(z1,1) 1]); 
+%     mom2 = reshape(repmat(M1*p2,[1 poolsz])',[size(z1,1) 1]);
+%     mom3 = reshape(repmat(M1*p3,[1 poolsz])',[size(z1,1) 1]);  
+%    
+%     G = sum(M1)'; 
+%     
+%     moments_error = (mom3 - 2*mom2 + mom1);
+%     
+%     tmp = moments_error./m1;
 
-xrec = zeros(size(x)); 
 
-for ii = 1:3 
+% 
+% dEp_dz2 = diff2_Ep_dz(z,P,M1,poolsz); 
+% dEp_dz1 = diff_Ep_dz(z,P,M1); 
+
+%  z = z + 0.01*ones(size(z)); 
+
+
+ 
+ 
+%     z = ReLU(rand(codesz,bsz,3),0.5); 
     
-    xrec(:,:,ii) = W*z(:,:,ii); 
+%     z1 = z(:,:,1); z1 = z1(:); 
+%     z2 = z(:,:,2); z2 = z2(:); 
+%     z3 = z(:,:,3); z3 = z3(:); 
+%     
+%     m1 = P*z1 + eps*ones(size(z1));
+%     m2 = P*z2 + eps*ones(size(z1));
+%     m3 = P*z3 + eps*ones(size(z1));
+%     
+%     p1 = z1./m1; 
+%     p2 = z2./m2; 
+%     p3 = z3./m3; 
+%     
+%     mom1 = reshape(repmat(M1*p1,[1 poolsz])',[size(z1,1) 1]); 
+%     mom2 = reshape(repmat(M1*p2,[1 poolsz])',[size(z1,1) 1]);
+%     mom3 = reshape(repmat(M1*p3,[1 poolsz])',[size(z1,1) 1]);  
+%     
+%     G = sum(M1)'; 
+%     
+%     moments_error = (mom3 - 2*mom2 + mom1);
+%     
+%     dEp_dz2 = [moments_error./m1.*(G - z1.*mom1); 
+%             -2*moments_error./m2.*(G - z2.*mom2);
+%                moments_error./m3.*(G - z3.*mom3)];
+%         
+%     dEp_dz2 = reshape(dEp_dz2,size(z));       
     
-end
+ dEp_dz = diff_Ep_dz(z,P,M1); 
+ dEp_dz2 = diff2_Ep_dz(z,P,M1,poolsz); 
+ dEp_dz_num = check_gradients(x,z,W,P,P1,M1,dEr_dz,dEr_dW,dEs_dz,dEp_dz,dx);
+ 
+ figure(2); 
+ hold on; 
+%  z1 = z(:,:,1); z1 = z1(:); 
+%  plot(z1(:),'c');
+ t = 2; 
+ dEp_dz_num = dEp_dz_num(:,:,t);
+ dEp_dz_num = dEp_dz_num(:); 
+ dEp_dz = dEp_dz(:,:,t);
+ dEp_dz = dEp_dz(:);
+ dEp_dz2 = dEp_dz2(:,:,t);
+ dEp_dz2 = dEp_dz2(:);
+ dEp_dz2(abs(dEp_dz2)>100) = 10; 
+ plot(dEp_dz_num,'go'); 
+ plot(dEp_dz,'r'); 
+ plot(dEp_dz2,'b*'); 
+ 
+ 
+ 
 
-Ixrec = reshape(xrec, [16 16 1 24]);
-figure; 
-imdisp(Ixrec,'Border',[0.1 0.1])
 
 
+
+
+
+
+
+
+
+
+
+
+
+% insz = 16; %patch size
+% codesz = 9;%2*insz; %code size 
+% poolsz = 3; %pool group size
+% poolst = 3; %pool group stride 
+% bsz = 8; %batch size 
+% L = 100; 
+% outsz = (codesz-poolsz)/poolst + 1; %output size 
+% 
+% z1 = sym('z1','real'); z2 = sym('z2','real'); z3 = sym('z3','real'); 
+% z4 = sym('z4','real'); z5 = sym('z5','real'); z6 = sym('z6','real'); 
+% z7 = sym('z7','real'); z8 = sym('z8','real'); z9 = sym('z9','real'); 
+% z = [z1 z2 z3 z4 z5 z6 z7 z8 z9]'; 
+% 
+% %pooling matrix 
+% r = zeros(1,codesz); 
+% r(1,1:poolsz) = 1; 
+% P1 = zeros(outsz,codesz); 
+% for ii = 1:outsz
+%     P1(ii,:) = r; 
+%     r = circshift(r,[1 poolst]); 
+% end
+% P = P1'*P1; 
+% 
+% 
+% diag(P*z) - diag(z)*P
+
+
+
+
+
+
+
+
+
+% 
+% 
+% 
+% tic(); 
+% dEp_dz = diff_Ep_dz(z,P,M1);
+% disp('===')
+% disp(toc());
+% 
+% tic(); 
+% dEs_dz = diff_Es_dz(z,P);
+% disp('===')
+% disp(toc());
+% 
+
+
+
+
+
+% 
+% xrec = zeros(size(x)); 
+% 
+% for ii = 1:3 
+%     
+%     xrec(:,:,ii) = W*z(:,:,ii); 
+%     
+% end
+% 
+% Ixrec = reshape(xrec, [16 16 1 24]);
+% figure; 
+% imdisp(Ixrec,'Border',[0.1 0.1])
+% 
+% 
 
 
 
